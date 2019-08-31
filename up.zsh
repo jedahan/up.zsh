@@ -18,7 +18,7 @@ function up {
   fun config 'dotfiles' && { config pull }                          &>> $uplog; e 
   fun zr 'zsh plugins'  && { zr update }                            &>> $uplog; e ▲ && rg 'Updating [a-f0-9]{6}\.\.[a-f0-9]{6}' -B1 $uplog
   fun tldr 'tldr'       && { tldr --update }                        &>> $uplog; e ⚡
-  fun apt 'apt'         && { sudo apt update; sudo apt -y upgrade; sudo apt autoremove } &>> $uplog; e  && sed -n '/graded:$/,/graded,/{/graded:$/b;/graded,/b;p}' $uplog
+  fun apt 'apt'         && { sudo apt update; sudo apt full-upgrade -y --autoremove } &>> $uplog; e  && sed -n '/graded:$/,/graded,/{/graded:$/b;/graded,/b;p}' $uplog
   fun nvim 'neovim'     && { nvim +PlugUpdate! +PlugClean! +qall  } &>> $uplog; e  && rg 'Updated!\s+(.+/.+)' -r '$1' -N $uplog | paste -s - | head -c -1
   fun rustup 'rust'     && { rustup update }                        &>> $uplog; e  && rg 'updated.*rustc' -N $uplog | cut -d' ' -f7 | paste -s - | head -c -1
   fun cargo 'crates'    && { cargo install-update --all }           &>> $uplog; e  && rg '(.*)Yes$' --replace '$1' $uplog | paste -s - | head -c -1
