@@ -1,30 +1,20 @@
 # up - upgrade everything
 
-(( $+functions[up] )) && return
-
 function up {
-  uplog=/tmp/up; echo > $uplog
+  local -A u
+  function fun { cmd=${1##*::}; (( $+aliases[$cmd] || $+functions[$cmd] || $+commands[$cmd] )) && { $@; u[$cmd]=$? } }
 
-  (( $+commands[tmux] )) && {
-    window_name=`tmux list-windows -F '#{?window_active,#{window_name},}'`
-    tmux select-window -t  2>/dev/null || tmux rename-window 
-    tmux split-window -h -d -t  "tail -f $uplog"
-  }
+  sudo -v
 
-  function e { if [ $? -eq 0 ]; then command cat <<< $1; else echo ":("; fi }
-  function fun { (( $+aliases[$1] || $+functions[$1] || $+commands[$1] )) && echo -n "updating $2..." }
+  up::config() { config pull }
+  up::tldr() { tldr --update }
+  up::zr() { zr update | rg 'Updating [a-f0-9]{6}\.\.[a-f0-9]{6}' -B1 }
+  up::apt() { sudo apt update && sudo apt full-upgrade -y --autoremove && sed -n '/graded:$/,/graded,/{/graded:$/b;/graded,/b;p}' }
+  up::nvim() { nvim +PlugUpdate! +PlugClean! +qall | rg 'Updated!\s+(.+/.+)' -r '$1' -N | paste -s - | head -c -1 }
+  up::rustup() { rustup update | rg 'updated.*rustc' -N | cut -d' ' -f7 | paste -s - | head -c -1 }
+  up::cargo() { cargo install-update --all | rg '(.*)Yes$' -r '$1' | paste -s - | head -c -1 }
 
-  sudo -v; command cat <<< "  $uplog"
-  fun config 'dotfiles' && { config pull }                          &>> $uplog; e 
-  fun zr 'zsh plugins'  && { zr update }                            &>> $uplog; e ▲ && rg 'Updating [a-f0-9]{6}\.\.[a-f0-9]{6}' -B1 $uplog
-  fun tldr 'tldr'       && { tldr --update }                        &>> $uplog; e ⚡
-  fun apt 'apt'         && { sudo apt update; sudo apt full-upgrade -y --autoremove } &>> $uplog; e  && sed -n '/graded:$/,/graded,/{/graded:$/b;/graded,/b;p}' $uplog
-  fun nvim 'neovim'     && { nvim +PlugUpdate! +PlugClean! +qall  } &>> $uplog; e  && rg 'Updated!\s+(.+/.+)' -r '$1' -N $uplog | paste -s - | head -c -1
-  fun rustup 'rust'     && { rustup update }                        &>> $uplog; e  && rg 'updated.*rustc' -N $uplog | cut -d' ' -f7 | paste -s - | head -c -1
-  fun cargo 'crates'    && { cargo install-update --all }           &>> $uplog; e  && rg '(.*)Yes$' --replace '$1' $uplog | paste -s - | head -c -1
+  for update in up::{config,tldr,zr,apt,nvim,rustup,cargo}; do fun $update; done
 
-  (( $+commands[tmux] )) && {
-    tmux kill-pane -t :.{right}
-    tmux rename-window ${window_name//[[:space:]]/}
-  }
+  print ${(kv)u}
 }
