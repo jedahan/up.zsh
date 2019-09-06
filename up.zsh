@@ -3,8 +3,8 @@
 function up {
   up::config() { config pull }
   up::tldr() { tldr --update }
-  up::zr() { zr update | rg 'Updating [a-f0-9]{6}\.\.[a-f0-9]{6}' -B1 }
-  up::apt() { sudo apt update -qq && sudo apt full-upgrade -y --autoremove && sed -n '/graded:$/,/graded,/{/graded:$/b;/graded,/b;p}' }
+  up::zr() { zr update }
+  up::apt() { sudo apt update -qq && sudo apt full-upgrade -y --autoremove | sed -n '/graded:$/,/graded,/{/graded:$/b;/graded,/b;p}' }
   up::nvim() { nvim +PlugUpdate! +PlugClean! +qall | rg 'Updated!\s+(.+/.+)' -r '$1' -N | paste -s - | head -c -1 }
   up::rustup() { rustup update | rg 'updated.*rustc' -N | cut -d' ' -f7 | paste -s - | head -c -1 }
   up::cargo() { cargo install-update --all | rg '(.*)Yes$' -r '$1' | paste -s - | head -c -1 }
@@ -14,7 +14,7 @@ function up {
 
   local -A u
   sudo -v
-  function fun { cmd=${1##*::}; (( $+aliases[$cmd] || $+functions[$cmd] || $+commands[$cmd] )) && { $@; u[$cmd]=$? } }
-  functions | rg 'up::(\w+).*' -r '$1' | xargs -I _ fun _
+  function fun { cmd=${1##*::}; (( $+aliases[$cmd] || $+functions[$cmd] || $+commands[$cmd] )) && { echo \# $1; $@; u[$cmd]=$? } }
+  for update ($(functions | rg '(up::\w+).*' -r '$1')) fun $update
   print ${(kv)u}
 }
