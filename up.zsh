@@ -3,7 +3,7 @@
 function up {
   up::config() { config pull }
   up::tldr() { tldr --update }
-  up::zr() { zr update | grep remote }
+  up::zr() { zr $(rg '^# (.*)' -r '$1' ~/.config/zr.zsh | tr '\n' ' ') > ~/.config/zr.zsh }
   up::apt() { sudo apt update -qq && sudo apt full-upgrade -y --autoremove | sed -n '/graded:$/,/graded,/{/graded:$/b;/graded,/b;p}' }
   up::nvim() { nvim +PlugUpdate! +PlugClean! +qall |& rg 'Updated!\s+(.+/.+)' -r '$1' -N | paste -s - | head -c -1 }
   up::rustup() { rustup update |& rg 'rustc' }
