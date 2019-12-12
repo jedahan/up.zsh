@@ -15,6 +15,6 @@ function up {
   local -A u
   sudo -v
   function fun { cmd=${1##*::}; (( $+aliases[$cmd] || $+functions[$cmd] || $+commands[$cmd] )) && { print "\n\# $1"; $@; u[$cmd]=$? } }
-  for update in $(functions | rg '(up::\w+).*' -r '$1'); do fun $update; done
+  for update ($(functions -m 'up::*' + | rg '(up::\w+).*' -r '$1')) fun $update
   print ${(kv)u}
 }
